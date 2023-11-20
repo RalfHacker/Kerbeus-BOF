@@ -2,6 +2,7 @@
 all: bof
 
 bof:
+	@(mkdir _bin 2>/dev/null) && echo 'creating _bin' || echo '_bin exists'
 	@(x86_64-w64-mingw32-gcc -w -o _bin/hash.x64.o -I ./ -Os -s -c hash/hash.c && x86_64-w64-mingw32-strip --strip-unneeded _bin/hash.x64.o) && echo '[*] hash' || echo '[X] hash'
 	@(x86_64-w64-mingw32-gcc -w -o _bin/klist.x64.o -I ./ -Os -s -c klist/klist.c && x86_64-w64-mingw32-strip --strip-unneeded _bin/klist.x64.o) && echo '[*] klist' || echo '[X] klist'
 	@(x86_64-w64-mingw32-gcc -w -o _bin/triage.x64.o -I ./ -DTRIAGE -Os -s -c klist/klist.c && x86_64-w64-mingw32-strip --strip-unneeded _bin/triage.x64.o) && echo '[*] triage' || echo '[X] triage'
