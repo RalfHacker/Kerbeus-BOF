@@ -250,6 +250,8 @@ BOOL HandleASREP(AsnElt responseAsn, EncryptionKey encKey, byte* serviceKey, BOO
     if (AsnGetEncKDCRepPart(&(ae.sub[0]), &encRepPart)) return TRUE;
 
     KRB_CRED cred = { 0 };
+    cred.pvno = 5;
+    cred.msg_type = 22;
     cred.ticket_count = 1;
     cred.tickets = MemAlloc(sizeof(Ticket) * cred.ticket_count);
     cred.tickets[0] = as_rep.ticket;
