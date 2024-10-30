@@ -13,7 +13,7 @@ size_t my_wcslen(const wchar_t* str) {
 DateTime GetLocalTimeAdd(uint add) {
     char datatime[18];
     SYSTEMTIME systemTime;
-    KERNEL32$GetLocalTime(&systemTime);
+    KERNEL32$GetSystemTime(&systemTime);
     FILETIME fileTime;
     KERNEL32$SystemTimeToFileTime(&systemTime, &fileTime);
     ULARGE_INTEGER uli;
@@ -347,7 +347,7 @@ bool AsnEncTimeStampToPaDataEncode(EncryptionKey encKey, PA_DATA* pa_data) {
     pa_data->type = PADATA_ENC_TIMESTAMP;
 
     char datatime[18];
-    DateTime dt = GetGmTimeAdd(0);
+    DateTime dt = GetLocalTimeAdd(0);
     MSVCRT$sprintf(datatime, "%04d%02d%02d%02d%02d%02dZ", dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second);
 
     AsnElt patimestampSeqContext = { 0 };
