@@ -27,19 +27,33 @@ BOOL IsSystem(HANDLE TokenHandle) {
     PTOKEN_USER pTokenUser = (PTOKEN_USER)bTokenUser;
     ULONG cbTokenUser;
     SID_IDENTIFIER_AUTHORITY siaNT = SECURITY_NT_AUTHORITY;
-    PSID pSystemSid;
+    PSID pSystemSid = NULL;
+    BOOL bSystem = FALSE;
 
-    if (!ADVAPI32$OpenProcessToken((HANDLE)-1, TOKEN_QUERY, &TokenHandle))
+    // Try to open the token of the current thread first
+    if (!ADVAPI32$OpenThreadToken(KERNEL32$GetCurrentThread(), TOKEN_QUERY, TRUE, &TokenHandle)) {
+        // If there is no thread token, fall back to the process token
+        if (KERNEL32$GetLastError() == ERROR_NO_TOKEN) {
+            if (!ADVAPI32$OpenProcessToken(KERNEL32$GetCurrentProcess(), TOKEN_QUERY, &TokenHandle)) {
+                return FALSE;
+            }
+        } else {
+            return FALSE;
+        }
+    }
+
+    if (!ADVAPI32$GetTokenInformation(TokenHandle, TokenUser, pTokenUser, sizeof(bTokenUser), &cbTokenUser)) {
         return FALSE;
+    }
 
-    if (!ADVAPI32$GetTokenInformation(TokenHandle, TokenUser, pTokenUser, sizeof(bTokenUser), &cbTokenUser))
+    if (!ADVAPI32$AllocateAndInitializeSid(&siaNT, 1, SECURITY_LOCAL_SYSTEM_RID, 0, 0, 0, 0, 0, 0, 0, &pSystemSid)) {
         return FALSE;
+    }
 
-    if (!ADVAPI32$AllocateAndInitializeSid(&siaNT, 1, SECURITY_LOCAL_SYSTEM_RID, 0, 0, 0, 0, 0, 0, 0, &pSystemSid))
-        return FALSE;
+    bSystem = ADVAPI32$EqualSid(pTokenUser->User.Sid, pSystemSid);
 
-    BOOL bSystem = ADVAPI32$EqualSid(pTokenUser->User.Sid, pSystemSid);
     ADVAPI32$FreeSid(pSystemSid);
+
     return bSystem;
 }
 
