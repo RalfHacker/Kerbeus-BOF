@@ -2,7 +2,7 @@
 
 ----
 
-Beacon Object Files for Kerberos abuse. This is an implementation of some important features of the [Rubeus](https://github.com/GhostPack/Rubeus) project, written in C. The project features integration with the C2 frameworks [Cobalt Strike](https://www.cobaltstrike.com/) and [Havoc](https://github.com/HavocFramework/Havoc).
+Beacon Object Files for Kerberos abuse. This is an implementation of some important features of the [Rubeus](https://github.com/GhostPack/Rubeus) project, written in C. The project features integration with the C2 frameworks [Cobalt Strike](https://www.cobaltstrike.com/), [Havoc](https://github.com/HavocFramework/Havoc) and [AdaptixC2](https://github.com/Adaptix-Framework/AdaptixC2).
 
 ![](_img/01.png)
 
@@ -241,7 +241,6 @@ krb_changepw /ticket:BASE64 /new:PASSWORD [/dc:DC] [/targetuser:USER] [/targetdo
 - [ ] Implement `asktgt /cert:...`
 - [ ] Refactoring code to reduce BOFs size
 - [ ] Expand the output of the `describe`
-- [ ] Integration with C2 Sliver and Brute Ratel
 * if you need anything, PM me to X or TG :)
 
 ## Credits
