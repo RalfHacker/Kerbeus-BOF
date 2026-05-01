@@ -16,10 +16,13 @@ To form AS-REQ's more inline with genuine requests, the `/opsec` flag can be use
 
 Requesting a TGT without a PAC can be done using the `/nopac` switch. The `/nopreauth` flag can be used to send an AS-REQ without pre-authentication.
 
+The `/certificate:X` option accepts a base64-encoded PFX blob similar to Rubeus and reuses `/password:X` as the PFX password when needed. This path now performs direct PKINIT with a CryptoAPI-backed PFX and does not require SYSTEM.
+
 ```
 krb_asktgt /user:USER /password:PASSWORD [/domain:DOMAIN] [/dc:DC] [/enctype:{rc4|aes256}] [/ptt] [/nopac] [/opsec]
 krb_asktgt /user:USER /aes256:HASH [/domain:DOMAIN] [/dc:DC] [/ptt] [/nopac] [/opsec]
 krb_asktgt /user:USER /rc4:HASH [/domain:DOMAIN] [/dc:DC] [/ptt] [/nopac]
+krb_asktgt /user:USER /certificate:BASE64_PFX [/password:PFX_PASSWORD] [/domain:DOMAIN] [/dc:DC] [/ptt]
 krb_asktgt /user:USER /nopreauth [/domain:DOMAIN] [/dc:DC] [/ptt]
 ```
 
@@ -238,7 +241,7 @@ krb_changepw /ticket:BASE64 /new:PASSWORD [/dc:DC] [/targetuser:USER] [/targetdo
 
 ## TODO
 
-- [ ] Implement `asktgt /cert:...`
+- [x] Implement `asktgt /cert:...`
 - [ ] Refactoring code to reduce BOFs size
 - [ ] Expand the output of the `describe`
 * if you need anything, PM me to X or TG :)
