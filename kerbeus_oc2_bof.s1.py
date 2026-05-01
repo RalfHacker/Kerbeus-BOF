@@ -61,6 +61,8 @@ class KerbAsktgtBOF(_KerbeusBase):
             "            [/enctype:{rc4|aes256}] [/ptt] [/nopac] [/opsec]\n"
             "  krb_asktgt /user:USER /aes256:HASH [/domain:DOMAIN] [/dc:DC] [/ptt] [/nopac] [/opsec]\n"
             "  krb_asktgt /user:USER /rc4:HASH   [/domain:DOMAIN] [/dc:DC] [/ptt] [/nopac]\n"
+            "  krb_asktgt /user:USER /certificate:BASE64_PFX [/password:PFX_PASSWORD]\n"
+            "            [/domain:DOMAIN] [/dc:DC] [/ptt]\n"
             "  krb_asktgt /user:USER /nopreauth  [/domain:DOMAIN] [/dc:DC] [/ptt]\n"
         )
 
@@ -224,4 +226,3 @@ class KerbTriageBOF(_KerbeusBase):
             "Synopsis:\n"
             "  krb_triage [/luid:LOGINID] [/user:USER] [/service:SERVICE] [/client:CLIENT]\n"
         )
-

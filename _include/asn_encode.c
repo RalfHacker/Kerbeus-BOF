@@ -156,7 +156,12 @@ bool EncodeUTF32(const wchar_t* str, int* len, byte** ms) {
 
 bool MakePrimitiveInner(int tagClass, int tagValue, byte* val, int off, int len, AsnElt* a) {
     a->objBufSize = len;
-    if (my_copybuf(&(a->objBuf), val + off, len)) return true;
+    if (len > 0) {
+        if (my_copybuf(&(a->objBuf), val + off, len)) return true;
+    }
+    else {
+        a->objBuf = NULL;
+    }
 
     a->objOff = 0;
     a->objLen = -1;
@@ -941,14 +946,15 @@ bool AsnPaDataEncode(PA_DATA padata, AsnElt* seq) {
         if (Make3(ASN_SEQUENCE, allSeq, 2, seq)) return true;
     }
     else if (padata.type == PADATA_PK_AS_REQ) {
-        PRINT_OUT("--- AsnPaDataEncode --- PADATA_PK_AS_REQ\n");
-        //	AsnElt blob = AsnElt.MakeBlob(((PA_PK_AS_REQ)value).Encode().Encode());
-        //	AsnElt blobSeq = AsnElt.Make(AsnElt.SEQUENCE, new AsnElt[]{ blob });
+        RAW_DATA* raw = (RAW_DATA*)padata.value;
+        if (!raw || !raw->data || raw->size <= 0)
+            return true;
 
-        //	paDataElt = AsnElt.MakeImplicit(AsnElt.CONTEXT, 2, blobSeq);
+        AsnElt paDataElt = { 0 };
+        if (PackBlock(2, raw->data, raw->size, &paDataElt)) return true;
 
-        //	AsnElt seq = AsnElt.Make(AsnElt.SEQUENCE, new AsnElt[]{ nameTypeSeq, paDataElt });
-        //	return seq;
+        AsnElt allSeq[] = { nameTypeSeqContext, paDataElt };
+        if (Make3(ASN_SEQUENCE, allSeq, 2, seq)) return true;
     }
     else if (padata.type == PADATA_KEY_LIST_REQ) {
         AsnElt encData = { 0 };

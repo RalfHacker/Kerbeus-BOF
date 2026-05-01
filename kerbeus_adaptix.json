@@ -26,7 +26,7 @@
           "description": "Retrieve a TGT",
           "example": "kerbeus asktgt /user:Admin /password:QWErty /enctype:aes256 /opsec /ptt",
           "args": [
-            "STRING <params> {Args: /user:USER /password:PASSWORD [/domain:DOMAIN] [/dc:DC] [/enctype:(rc4|aes256)] [/ptt] [/nopac] [/opsec]\n                              /user:USER /aes256:HASH [/domain:DOMAIN] [/dc:DC] [/ptt] [/nopac] [/opsec]\n                              /user:USER /rc4:HASH [/domain:DOMAIN] [/dc:DC] [/ptt] [/nopac]\n                              /user:USER /nopreauth [/domain:DOMAIN] [/dc:DC] [/ptt]}"
+            "STRING <params> {Args: /user:USER /password:PASSWORD [/domain:DOMAIN] [/dc:DC] [/enctype:(rc4|aes256)] [/ptt] [/nopac] [/opsec]\n                              /user:USER /aes256:HASH [/domain:DOMAIN] [/dc:DC] [/ptt] [/nopac] [/opsec]\n                              /user:USER /rc4:HASH [/domain:DOMAIN] [/dc:DC] [/ptt] [/nopac]\n                              /user:USER /certificate:BASE64_PFX [/password:PFX_PASSWORD] [/domain:DOMAIN] [/dc:DC] [/ptt]\n                              /user:USER /nopreauth [/domain:DOMAIN] [/dc:DC] [/ptt]}"
           ],
           "exec": "execute bof $EXT_DIR()/_bin/asktgt.$ARCH().o $PACK_BOF(CSTR {params})"
         },

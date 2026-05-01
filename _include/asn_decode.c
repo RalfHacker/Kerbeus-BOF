@@ -902,8 +902,10 @@ bool AsnGetPaData(AsnElt* body, PA_DATA* padata) {
             //	value = new KERB_PA_PAC_REQUEST(AsnElt.Decode(body.Sub[1].Sub[0].CopyValue()));
             break;
         case PADATA_PK_AS_REP:
-            PRINT_OUT("--- AsnGetPaData --- case PADATA_PK_AS_REP");
-            //	value = new PA_PK_AS_REP(AsnElt.Decode(body.Sub[1].Sub[0].CopyValue()));
+            padata->value = MemAlloc(sizeof(RAW_DATA));
+            if (!padata->value) return true;
+            ((RAW_DATA*)padata->value)->size = valueBytesLength;
+            ((RAW_DATA*)padata->value)->data = valueBytes;
             break;
         case PADATA_PA_S4U_X509_USER:
             break;
